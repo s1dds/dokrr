@@ -11,7 +11,7 @@
     </div>
 
     <!-- Rendered markdown -->
-    <Transition name="fade" mode="out-in">
+    <Transition name="fade" mode="out-in" @enter="restoreScroll">
       <article
         v-if="store.activeContent"
         :key="store.activeFileId"
@@ -94,6 +94,7 @@ const { init, render, isReady } = useMarkdownRenderer()
 const mainEl = ref<HTMLElement | null>(null)
 const showSlider = ref(false)
 const zoomValue = ref(0) // 0–100 range, 0 = 1x (default)
+const scrollPositions = new Map<string, number>()
 
 const MIN_SCALE = 1.0   // 100%
 const MAX_SCALE = 1.5   // 150%
@@ -107,6 +108,20 @@ const presets = [
 onMounted(() => {
   init()
 })
+
+// Save scroll position when switching away
+watch(() => store.activeFileId, (_newId, oldId) => {
+  if (oldId && mainEl.value) {
+    scrollPositions.set(oldId, mainEl.value.scrollTop)
+  }
+})
+
+// Restore scroll position after new content has faded in
+function restoreScroll() {
+  if (!mainEl.value || !store.activeFileId) return
+  const saved = scrollPositions.get(store.activeFileId)
+  mainEl.value.scrollTop = saved ?? 0
+}
 
 // Interpolate between MIN_SCALE and MAX_SCALE
 const scaleFactor = computed(() => {
