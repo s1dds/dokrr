@@ -42,11 +42,14 @@ import { useFileParser } from '~/composables/useFileParser'
 const store = useBookStore()
 const { parseEntries } = useFileParser()
 
-function handleFiles(entries: FileEntry[]) {
-  const { tree, files } = parseEntries(entries)
-  store.loadBook(tree, files)
-  const firstFile = findFirstFile(tree)
-  if (firstFile) store.setActiveFile(firstFile.id)
+function hasSubFolders(nodes: TreeNode[]): boolean {
+  for (const node of nodes) {
+    if (node.type === 'folder') {
+      if (node.children?.some(c => c.type === 'folder')) return true
+      if (node.children && hasSubFolders(node.children)) return true
+    }
+  }
+  return false
 }
 
 function findFirstFile(nodes: TreeNode[]): TreeNode | null {
@@ -58,5 +61,15 @@ function findFirstFile(nodes: TreeNode[]): TreeNode | null {
     }
   }
   return null
+}
+
+function handleFiles(entries: FileEntry[]) {
+  const { tree, files } = parseEntries(entries)
+  store.loadBook(tree, files)
+
+  if (!hasSubFolders(tree)) {
+    const firstFile = findFirstFile(tree)
+    if (firstFile) store.setActiveFile(firstFile.id)
+  }
 }
 </script>

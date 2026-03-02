@@ -6,6 +6,7 @@ export const useBookStore = defineStore('book', () => {
   const files = ref(new Map<string, string>())
   const activeFileId = ref<string | null>(null)
   const sidebarOpen = ref(true)
+  const expandedFolderIds = ref(new Set<string>())
 
   const activeContent = computed(() => {
     if (!activeFileId.value) return null
@@ -22,13 +23,33 @@ export const useBookStore = defineStore('book', () => {
     tree.value = newTree
     files.value = newFiles
     activeFileId.value = null
+    expandedFolderIds.value = new Set(
+      newTree.filter(n => n.type === 'folder').map(n => n.id),
+    )
   }
 
+  let addCounter = 0
   function addEntries(newTree: TreeNode[], newFiles: Map<string, string>) {
-    for (const [key, value] of newFiles) {
-      files.value.set(key, value)
+    addCounter++
+    const prefix = `__added_${addCounter}__`
+
+    // Prefix IDs to avoid collisions with existing entries
+    function prefixNode(node: TreeNode): TreeNode {
+      const newNode: TreeNode = {
+        ...node,
+        id: prefix + node.id,
+      }
+      if (node.children) {
+        newNode.children = node.children.map(prefixNode)
+      }
+      return newNode
     }
-    tree.value = [...tree.value, ...newTree]
+
+    const prefixedTree = newTree.map(prefixNode)
+    for (const [key, value] of newFiles) {
+      files.value.set(prefix + key, value)
+    }
+    tree.value = [...tree.value, ...prefixedTree]
   }
 
   function removeFolder(folderId: string) {
@@ -81,6 +102,7 @@ export const useBookStore = defineStore('book', () => {
     activeContent,
     activeFileName,
     sidebarOpen,
+    expandedFolderIds,
     loadBook,
     addEntries,
     removeFolder,

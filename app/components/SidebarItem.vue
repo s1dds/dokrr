@@ -32,7 +32,11 @@
           ]"
         />
 
-        <span class="truncate">{{ displayName }}</span>
+        <span
+          class="sidebar-label truncate"
+          @mouseenter="showFullLabel"
+          @mouseleave="hideFullLabel"
+        >{{ displayName }}</span>
       </button>
 
       <!-- Remove folder button — visible on hover -->
@@ -47,6 +51,26 @@
         </svg>
       </button>
     </div>
+
+    <!-- Full label overlay for truncated names -->
+    <Teleport to="body">
+      <div
+        v-if="labelOverlay.visible"
+        class="fixed z-[100] flex items-center gap-2 font-display text-[13px] px-3 py-1.5 rounded-lg pointer-events-none whitespace-nowrap"
+        :class="isActive ? 'text-amber-warm bg-ink-800' : 'text-ink-200 bg-ink-900'"
+        :style="{ top: labelOverlay.top + 'px', left: labelOverlay.left + 'px' }"
+      >
+        <!-- File dot -->
+        <span
+          v-if="node.type !== 'folder'"
+          :class="[
+            'w-1 h-1 rounded-full shrink-0 ml-1',
+            isActive ? 'bg-amber-warm' : 'bg-ink-700',
+          ]"
+        />
+        {{ displayName }}
+      </div>
+    </Teleport>
 
     <!-- Children -->
     <Transition name="slide">
@@ -73,7 +97,7 @@ const props = defineProps<{
 }>()
 
 const store = useBookStore()
-const isOpen = ref(true)
+const isOpen = ref(store.expandedFolderIds.has(props.node.id))
 
 const isActive = computed(
   () => props.node.type === 'file' && store.activeFileId === props.node.id,
@@ -85,6 +109,24 @@ const displayName = computed(() =>
     : props.node.name,
 )
 
+const labelOverlay = reactive({ visible: false, top: 0, left: 0 })
+
+function showFullLabel(e: MouseEvent) {
+  const el = e.target as HTMLElement
+  if (el.scrollWidth <= el.clientWidth) return // not truncated
+  // Position overlay at the button (parent) to match the full row
+  const btn = el.closest('button') as HTMLElement
+  if (!btn) return
+  const rect = btn.getBoundingClientRect()
+  labelOverlay.top = rect.top
+  labelOverlay.left = rect.left
+  labelOverlay.visible = true
+}
+
+function hideFullLabel() {
+  labelOverlay.visible = false
+}
+
 function handleClick() {
   if (props.node.type === 'folder') {
     isOpen.value = !isOpen.value
@@ -94,3 +136,4 @@ function handleClick() {
   }
 }
 </script>
+
