@@ -24,40 +24,62 @@
     <!-- Zoom control — bottom right, floating -->
     <div
       v-if="store.activeContent"
-      class="fixed bottom-6 right-6 z-50 flex items-center"
+      class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2"
       @mouseenter="showSlider = true"
       @mouseleave="showSlider = false"
     >
-      <!-- Slider track — expands on hover -->
-      <Transition name="zoom-slider">
-        <div
-          v-show="showSlider"
-          class="mr-2 flex items-center gap-2 bg-ink-900/90 backdrop-blur-md border border-ink-700/60 rounded-full px-3 py-1.5 shadow-lg"
-        >
-          <span class="font-display text-[10px] text-ink-500 whitespace-nowrap select-none">
-            {{ zoomPercent }}%
-          </span>
-          <input
-            type="range"
-            :min="0"
-            :max="100"
-            :value="zoomValue"
-            class="zoom-range w-28"
-            @input="onZoomInput"
-          />
+      <!-- Preset circles — appear above the zoom icon on hover -->
+      <Transition name="zoom-presets">
+        <div v-show="showSlider" class="flex flex-col items-center gap-2">
+          <button
+            v-for="preset in presets"
+            :key="preset.label"
+            :class="[
+              'w-9 h-9 rounded-full font-display text-[10px] font-500 transition-all duration-200 shrink-0 shadow-lg backdrop-blur-md border',
+              isPresetActive(preset.value)
+                ? 'bg-amber-warm border-amber-warm/60 text-ink-950'
+                : 'bg-ink-900/90 border-ink-700/60 text-ink-400 hover:text-ink-200 hover:border-ink-600',
+            ]"
+            @click="setZoom(preset.value)"
+          >
+            {{ preset.label }}
+          </button>
         </div>
       </Transition>
 
-      <!-- Zoom icon button -->
-      <button
-        class="w-9 h-9 rounded-full bg-ink-900/90 backdrop-blur-md border border-ink-700/60 flex items-center justify-center text-ink-400 hover:text-ink-200 hover:border-ink-600 transition-all shadow-lg"
-        title="Zoom content width"
-      >
-        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 8.25v4.5m2.25-2.25h-4.5" />
-        </svg>
-      </button>
+      <!-- Bottom row: slider pill + zoom icon -->
+      <div class="flex items-center gap-2">
+        <!-- Slider pill — appears on hover to the left -->
+        <Transition name="zoom-slider">
+          <div
+            v-show="showSlider"
+            class="flex items-center gap-2 bg-ink-900/90 backdrop-blur-md border border-ink-700/60 rounded-full px-3 py-2 shadow-lg"
+          >
+            <input
+              type="range"
+              :min="0"
+              :max="100"
+              :value="zoomValue"
+              class="zoom-range w-24"
+              @input="onZoomInput"
+            />
+            <span class="font-display text-[10px] text-ink-500 whitespace-nowrap select-none w-7 text-right">
+              {{ zoomPercent }}%
+            </span>
+          </div>
+        </Transition>
+
+        <!-- Zoom icon button -->
+        <button
+          class="w-9 h-9 rounded-full bg-ink-900/90 backdrop-blur-md border border-ink-700/60 flex items-center justify-center text-ink-400 hover:text-ink-200 hover:border-ink-600 transition-all shadow-lg"
+          title="Zoom content"
+        >
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 8.25v4.5m2.25-2.25h-4.5" />
+          </svg>
+        </button>
+      </div>
     </div>
   </main>
 </template>
@@ -71,10 +93,16 @@ const { init, render, isReady } = useMarkdownRenderer()
 
 const mainEl = ref<HTMLElement | null>(null)
 const showSlider = ref(false)
-const zoomValue = ref(50) // 0–100 range, 50 = 100% (default)
+const zoomValue = ref(0) // 0–100 range, 0 = 1x (default)
 
-const MIN_SCALE = 0.7  // 70%
-const MAX_SCALE = 1.5  // 150%
+const MIN_SCALE = 1.0   // 100%
+const MAX_SCALE = 1.5   // 150%
+
+const presets = [
+  { label: '1x', value: 0 },      // 100%
+  { label: '1.25x', value: 50 },  // 125%
+  { label: '1.5x', value: 100 },  // 150%
+]
 
 onMounted(() => {
   init()
@@ -92,6 +120,14 @@ const zoomPercent = computed(() => {
 function onZoomInput(event: Event) {
   const target = event.target as HTMLInputElement
   zoomValue.value = Number(target.value)
+}
+
+function setZoom(value: number) {
+  zoomValue.value = value
+}
+
+function isPresetActive(value: number): boolean {
+  return zoomValue.value === value
 }
 
 const renderedContent = computed(() => {
@@ -112,6 +148,19 @@ const renderedContent = computed(() => {
 .zoom-slider-leave-to {
   opacity: 0;
   transform: translateX(8px) scale(0.95);
+}
+
+/* Presets vertical expand/collapse transition */
+.zoom-presets-enter-active {
+  transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.zoom-presets-leave-active {
+  transition: opacity 0.15s ease, transform 0.2s ease;
+}
+.zoom-presets-enter-from,
+.zoom-presets-leave-to {
+  opacity: 0;
+  transform: translateY(8px) scale(0.95);
 }
 
 /* Custom range input styling */
