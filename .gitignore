@@ -25,6 +25,7 @@ logs
 
 # Playwright MCP screenshots
 .playwright-mcp
+*.png
 
 # Test fixtures
 test-book
