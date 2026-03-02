@@ -1,0 +1,185 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- Ink & Paper Theme --- */
+
+@layer base {
+  body {
+    @apply bg-ink-950 text-ink-200 antialiased;
+    font-feature-settings: 'kern' 1, 'liga' 1;
+  }
+}
+
+/* Grain overlay for texture */
+.grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #27272c;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a42;
+}
+
+/* Prose overrides — the reading experience */
+.prose {
+  --tw-prose-body: #a8a8b8;
+  --tw-prose-headings: #e8e8ee;
+  --tw-prose-lead: #a0a0b0;
+  --tw-prose-links: #e8a040;
+  --tw-prose-bold: #e8e8ee;
+  --tw-prose-counters: #78788a;
+  --tw-prose-bullets: #3a3a42;
+  --tw-prose-hr: #27272c;
+  --tw-prose-quotes: #a0a0b0;
+  --tw-prose-quote-borders: #e8a040;
+  --tw-prose-captions: #78788a;
+  --tw-prose-th-borders: #3a3a42;
+  --tw-prose-td-borders: #27272c;
+  font-family: 'Newsreader', Georgia, serif;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-family: 'Sora', sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.prose h1 {
+  font-size: 2rem;
+  margin-top: 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #27272c;
+}
+
+.prose h2 {
+  font-size: 1.4rem;
+  margin-top: 2.5rem;
+}
+
+.prose h3 {
+  font-size: 1.15rem;
+  color: #a0a0b0;
+}
+
+.prose a {
+  text-decoration-color: rgba(232, 160, 64, 0.3);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.2s;
+}
+
+.prose a:hover {
+  text-decoration-color: #e8a040;
+}
+
+.prose blockquote {
+  font-style: italic;
+  border-left-width: 2px;
+  border-left-color: #e8a040;
+  background: rgba(232, 160, 64, 0.03);
+  border-radius: 0 8px 8px 0;
+  padding: 0.75rem 1rem;
+}
+
+.prose img {
+  border-radius: 12px;
+  border: 1px solid #27272c;
+}
+
+.prose table {
+  font-family: 'Sora', sans-serif;
+  font-size: 0.85rem;
+}
+
+.prose thead th {
+  font-weight: 500;
+  color: #a0a0b0;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+}
+
+/* Code blocks — Shiki integration */
+.prose pre {
+  background: #111113 !important;
+  border: 1px solid #1c1c20;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.825rem;
+  line-height: 1.7;
+  overflow-x: auto;
+}
+
+.prose pre .shiki {
+  background: transparent !important;
+}
+
+.prose :not(pre) > code {
+  font-family: 'JetBrains Mono', monospace;
+  background: #1c1c20;
+  color: #e8a040;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.825em;
+  font-weight: 400;
+}
+
+.prose :not(pre) > code::before,
+.prose :not(pre) > code::after {
+  content: none;
+}
+
+/* Horizontal rule */
+.prose hr {
+  border-color: #1c1c20;
+  margin: 2.5rem 0;
+}
+
+/* Smooth transitions for content changes */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* Sidebar transitions */
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.slide-enter-from,
+.slide-leave-to {
+  transform: translateX(-8px);
+  opacity: 0;
+}

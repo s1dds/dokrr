@@ -1,0 +1,14 @@
+- the is a simple markdown book viewer designed in nuxt js.
+- it should have a sidebar for navigation and a main content area for displaying the markdown content.
+- the sidebar should be collapsible and should display the table of contents of the book.
+- the main content area should display the markdown content of the selected chapter.
+- the landing page should have a drag and drop/click to upload area for uploading a folder containing markdown files or a single markdown file.
+- the folder should be parsed and the table of contents should be generated.
+- the table of contents should be displayed in the sidebar.
+- the markdown files should be displayed in the main content area.
+- the markdown files should be displayed in the order they are in the folder.
+- default theme should be dark.
+- enable syntax highlighting for code blocks with auto lang detect.
+- the ui should be modern and minimal.
+- use context7 plugin to get the latest nuxt js docs.
+- use playwrite mcp to test/debug the app and fix errors
