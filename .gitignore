@@ -22,3 +22,12 @@ logs
 .env
 .env.*
 !.env.example
+
+# Playwright MCP screenshots
+.playwright-mcp
+
+# Test fixtures
+test-book
+
+# Claude Code
+.claude
