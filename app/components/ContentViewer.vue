@@ -6,7 +6,7 @@
       class="flex items-center justify-center h-full"
     >
       <p class="font-display text-ink-600 text-sm">
-        Select a chapter to begin reading
+        Select a document to begin reading
       </p>
     </div>
 

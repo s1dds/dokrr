@@ -1,4 +1,4 @@
-import type { FileEntry } from '~/components/UploadZone.vue'
+import type { FileEntry } from '~/types'
 
 /**
  * Recursively reads all .md files from a FileSystemDirectoryHandle.

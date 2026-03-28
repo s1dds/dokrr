@@ -1,6 +1,6 @@
 import type { TreeNode } from '~/types'
 
-const DB_NAME = 'md-book-viewer'
+const DB_NAME = 'dokrr'
 const DB_VERSION = 1
 const STORE_STATE = 'state'
 const STORE_HANDLES = 'handles'

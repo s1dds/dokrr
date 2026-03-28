@@ -1,5 +1,5 @@
 import type { TreeNode } from '~/types'
-import type { FileEntry } from '~/components/UploadZone.vue'
+import type { FileEntry } from '~/types'
 
 export function useFileParser() {
   function parseEntries(entries: FileEntry[]): {

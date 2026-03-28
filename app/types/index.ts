@@ -4,3 +4,8 @@ export interface TreeNode {
   type: 'file' | 'folder'
   children?: TreeNode[]
 }
+
+export interface FileEntry {
+  path: string
+  content: string
+}

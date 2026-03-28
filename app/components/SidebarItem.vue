@@ -151,6 +151,7 @@ async function handleReload() {
 function handleClick() {
   if (props.node.type === 'folder') {
     isOpen.value = !isOpen.value
+    store.toggleFolderExpanded(props.node.id, isOpen.value)
   }
   else {
     store.setActiveFile(props.node.id)

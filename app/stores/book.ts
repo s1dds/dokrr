@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import type { TreeNode } from '~/types'
-import type { FileEntry } from '~/components/UploadZone.vue'
+import type { FileEntry } from '~/types'
 import {
   saveState,
   loadState,
@@ -72,16 +72,6 @@ export const useBookStore = defineStore('book', () => {
   }
 
   function removeFolder(folderId: string) {
-    // Collect all file IDs under this folder
-    function collectFileIds(nodes: TreeNode[]): string[] {
-      const ids: string[] = []
-      for (const node of nodes) {
-        if (node.type === 'file') ids.push(node.id)
-        if (node.children) ids.push(...collectFileIds(node.children))
-      }
-      return ids
-    }
-
     function removeFromTree(nodes: TreeNode[]): TreeNode[] {
       return nodes.filter((n) => {
         if (n.id === folderId && n.type === 'folder') {
@@ -251,6 +241,15 @@ export const useBookStore = defineStore('book', () => {
     persist()
   }
 
+  function toggleFolderExpanded(folderId: string, expanded: boolean) {
+    if (expanded) {
+      expandedFolderIds.value.add(folderId)
+    } else {
+      expandedFolderIds.value.delete(folderId)
+    }
+    persist()
+  }
+
   function toggleSidebar() {
     sidebarOpen.value = !sidebarOpen.value
   }
@@ -289,6 +288,7 @@ export const useBookStore = defineStore('book', () => {
     addEntries,
     removeFolder,
     setActiveFile,
+    toggleFolderExpanded,
     toggleSidebar,
     reset,
     scrollPositions,

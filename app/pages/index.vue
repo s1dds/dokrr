@@ -35,7 +35,7 @@
 
 <script setup lang="ts">
 import type { TreeNode } from '~/types'
-import type { FileEntry } from '~/components/UploadZone.vue'
+import type { FileEntry } from '~/types'
 import { useBookStore } from '~/stores/book'
 import { useFileParser } from '~/composables/useFileParser'
 import { useDirWatcher } from '~/composables/useDirWatcher'

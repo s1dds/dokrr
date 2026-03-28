@@ -22,7 +22,7 @@
         </button>
         <button
           class="text-ink-600 hover:text-ink-300 transition-colors p-1 rounded-md hover:bg-ink-800/40"
-          title="Close book"
+          title="Close"
           @click="store.reset()"
         >
           <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -66,7 +66,7 @@
 </template>
 
 <script setup lang="ts">
-import type { FileEntry } from '~/components/UploadZone.vue'
+import type { FileEntry } from '~/types'
 import { useBookStore } from '~/stores/book'
 import { useFileParser } from '~/composables/useFileParser'
 import { readDirectoryAsEntries } from '~/utils/directoryReader'

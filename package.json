@@ -1,7 +1,11 @@
 {
-  "name": "md-book-viewer-cc",
+  "name": "dokrr",
+  "version": "1.0.0",
+  "description": "A distraction-free reader for markdown documents",
+  "author": "Siddharth Saxena",
+  "license": "MIT",
+  "keywords": ["markdown", "reader", "viewer", "documentation", "dark-theme", "nuxt", "dokrr"],
   "type": "module",
-  "private": true,
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
