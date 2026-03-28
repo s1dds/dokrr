@@ -73,6 +73,7 @@
         </div>
       </div>
 
+      <!-- Fallback file input for browsers without showDirectoryPicker -->
       <input
         ref="fileInput"
         type="file"
@@ -105,13 +106,15 @@
 </template>
 
 <script setup lang="ts">
+import { readDirectoryAsEntries } from '~/utils/directoryReader'
+
 export interface FileEntry {
   path: string
   content: string
 }
 
 const emit = defineEmits<{
-  filesLoaded: [entries: FileEntry[]]
+  filesLoaded: [entries: FileEntry[], handle?: FileSystemDirectoryHandle]
 }>()
 
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -119,8 +122,35 @@ const isDragging = ref(false)
 const error = ref('')
 const loading = ref(false)
 
-function openFilePicker() {
-  fileInput.value?.click()
+const hasDirectoryPicker = typeof window !== 'undefined' && 'showDirectoryPicker' in window
+
+async function openFilePicker() {
+  if (hasDirectoryPicker) {
+    try {
+      const dirHandle = await (window as any).showDirectoryPicker({ mode: 'read' })
+      loading.value = true
+      error.value = ''
+
+      const entries = await readDirectoryAsEntries(dirHandle)
+      loading.value = false
+
+      if (entries.length === 0) {
+        error.value = 'No markdown files found'
+        return
+      }
+      emit('filesLoaded', entries, dirHandle)
+    }
+    catch (e: any) {
+      loading.value = false
+      // User cancelled the picker
+      if (e.name === 'AbortError') return
+      error.value = e.message || 'Failed to read directory'
+    }
+  }
+  else {
+    // Fallback to webkitdirectory input
+    fileInput.value?.click()
+  }
 }
 
 async function handleFileInput(event: Event) {
@@ -157,6 +187,30 @@ async function handleDrop(event: DragEvent) {
   if (!items) return
 
   loading.value = true
+
+  // Try to get FileSystemDirectoryHandle (Chrome 86+) for persistence
+  let dirHandle: FileSystemDirectoryHandle | undefined
+  const handles: FileSystemHandle[] = []
+  for (const item of Array.from(items)) {
+    const handle = await item.getAsFileSystemHandle?.()
+    if (handle) handles.push(handle)
+  }
+
+  if (handles.length > 0 && handles[0].kind === 'directory') {
+    // Use handle-based reading
+    dirHandle = handles[0] as FileSystemDirectoryHandle
+    const entries = await readDirectoryAsEntries(dirHandle)
+    loading.value = false
+
+    if (entries.length === 0) {
+      error.value = 'No markdown files found in the dropped items'
+      return
+    }
+    emit('filesLoaded', entries, dirHandle)
+    return
+  }
+
+  // Fallback: use webkitGetAsEntry
   const collected: { path: string; file: File }[] = []
 
   async function traverseEntry(entry: FileSystemEntry): Promise<void> {
@@ -164,7 +218,6 @@ async function handleDrop(event: DragEvent) {
       const fileEntry = entry as FileSystemFileEntry
       const file = await new Promise<File>((resolve) => fileEntry.file(resolve))
       if (file.name.endsWith('.md')) {
-        // entry.fullPath preserves the folder hierarchy (e.g. "/research/chapter-01/file.md")
         const path = entry.fullPath.replace(/^\//, '')
         collected.push({ path, file })
       }
@@ -172,7 +225,6 @@ async function handleDrop(event: DragEvent) {
       const dirEntry = entry as FileSystemDirectoryEntry
       const reader = dirEntry.createReader()
       let allEntries: FileSystemEntry[] = []
-      // readEntries may not return all entries in one call — loop until empty
       let batch: FileSystemEntry[]
       do {
         batch = await new Promise<FileSystemEntry[]>((resolve) =>

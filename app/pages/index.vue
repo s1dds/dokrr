@@ -38,9 +38,20 @@ import type { TreeNode } from '~/types'
 import type { FileEntry } from '~/components/UploadZone.vue'
 import { useBookStore } from '~/stores/book'
 import { useFileParser } from '~/composables/useFileParser'
+import { useDirWatcher } from '~/composables/useDirWatcher'
 
 const store = useBookStore()
 const { parseEntries } = useFileParser()
+
+// Restore persisted state on mount
+onMounted(async () => {
+  if (store.tree.length === 0) {
+    await store.restore()
+  }
+})
+
+// Auto-poll directory handles for file changes
+useDirWatcher()
 
 function hasSubFolders(nodes: TreeNode[]): boolean {
   for (const node of nodes) {
@@ -63,9 +74,17 @@ function findFirstFile(nodes: TreeNode[]): TreeNode | null {
   return null
 }
 
-function handleFiles(entries: FileEntry[]) {
+function handleFiles(entries: FileEntry[], handle?: FileSystemDirectoryHandle) {
   const { tree, files } = parseEntries(entries)
   store.loadBook(tree, files)
+
+  // Store directory handle for reload capability
+  if (handle) {
+    const rootFolders = tree.filter(n => n.type === 'folder')
+    for (const folder of rootFolders) {
+      store.setDirHandle(folder.id, handle)
+    }
+  }
 
   if (!hasSubFolders(tree)) {
     const firstFile = findFirstFile(tree)

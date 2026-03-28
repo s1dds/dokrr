@@ -1,5 +1,5 @@
 <template>
-  <main ref="mainEl" class="flex-1 overflow-y-auto relative">
+  <main ref="mainEl" class="flex-1 overflow-y-auto relative" @scroll="onScroll">
     <!-- Empty state -->
     <div
       v-if="!store.activeContent"
@@ -13,7 +13,7 @@
     <!-- Rendered markdown -->
     <Transition name="fade" mode="out-in" @enter="restoreScroll">
       <article
-        v-if="store.activeContent"
+        v-if="store.activeContent && isReady"
         :key="store.activeFileId"
         class="prose prose-invert max-w-3xl mx-auto px-10 py-14"
         :style="{ zoom: scaleFactor }"
@@ -94,7 +94,6 @@ const { init, render, isReady } = useMarkdownRenderer()
 const mainEl = ref<HTMLElement | null>(null)
 const showSlider = ref(false)
 const zoomValue = ref(0) // 0–100 range, 0 = 1x (default)
-const scrollPositions = new Map<string, number>()
 
 const MIN_SCALE = 1.0   // 100%
 const MAX_SCALE = 1.5   // 150%
@@ -109,18 +108,29 @@ onMounted(() => {
   init()
 })
 
-// Save scroll position when switching away
+// Save scroll position on scroll (debounced) — keeps IndexedDB up-to-date continuously
+let scrollTimer: ReturnType<typeof setTimeout> | null = null
+function onScroll() {
+  if (scrollTimer) clearTimeout(scrollTimer)
+  scrollTimer = setTimeout(() => {
+    if (store.activeFileId && mainEl.value) {
+      store.saveScrollPosition(store.activeFileId, mainEl.value.scrollTop)
+    }
+  }, 300)
+}
+
+// Save scroll position when switching away (immediate, not debounced)
 watch(() => store.activeFileId, (_newId, oldId) => {
   if (oldId && mainEl.value) {
-    scrollPositions.set(oldId, mainEl.value.scrollTop)
+    if (scrollTimer) clearTimeout(scrollTimer)
+    store.saveScrollPosition(oldId, mainEl.value.scrollTop)
   }
 })
 
-// Restore scroll position after new content has faded in
+// Also restore on transition enter (handles normal navigation between files)
 function restoreScroll() {
   if (!mainEl.value || !store.activeFileId) return
-  const saved = scrollPositions.get(store.activeFileId)
-  mainEl.value.scrollTop = saved ?? 0
+  mainEl.value.scrollTop = store.getScrollPosition(store.activeFileId)
 }
 
 // Interpolate between MIN_SCALE and MAX_SCALE
@@ -149,6 +159,7 @@ const renderedContent = computed(() => {
   if (!isReady.value || !store.activeContent) return ''
   return render(store.activeContent)
 })
+
 </script>
 
 <style scoped>

@@ -30,6 +30,7 @@
           </svg>
         </button>
       </div>
+      <!-- Fallback file input for browsers without showDirectoryPicker -->
       <input
         ref="folderInput"
         type="file"
@@ -68,6 +69,7 @@
 import type { FileEntry } from '~/components/UploadZone.vue'
 import { useBookStore } from '~/stores/book'
 import { useFileParser } from '~/composables/useFileParser'
+import { readDirectoryAsEntries } from '~/utils/directoryReader'
 
 const store = useBookStore()
 const { parseEntries } = useFileParser()
@@ -75,8 +77,37 @@ const { parseEntries } = useFileParser()
 const folderInput = ref<HTMLInputElement | null>(null)
 const fileCount = computed(() => store.files.size)
 
-function openFolderPicker() {
-  folderInput.value?.click()
+const hasDirectoryPicker = typeof window !== 'undefined' && 'showDirectoryPicker' in window
+
+async function openFolderPicker() {
+  if (hasDirectoryPicker) {
+    try {
+      const dirHandle = await (window as any).showDirectoryPicker({ mode: 'read' })
+      const entries = await readDirectoryAsEntries(dirHandle)
+      if (entries.length > 0) {
+        const { tree, files } = parseEntries(entries)
+        store.addEntries(tree, files)
+
+        // Store handle for reload — find the newly added root folder ID
+        const rootFolders = tree.filter(n => n.type === 'folder')
+        for (const folder of rootFolders) {
+          // addEntries prefixes IDs, so we need to find the prefixed ID in the store
+          const addedFolder = store.tree.find(
+            n => n.type === 'folder' && n.name === folder.name && !store.hasDirHandle(n.id),
+          )
+          if (addedFolder) {
+            store.setDirHandle(addedFolder.id, dirHandle)
+          }
+        }
+      }
+    }
+    catch (e: any) {
+      if (e.name === 'AbortError') return
+    }
+  }
+  else {
+    folderInput.value?.click()
+  }
 }
 
 async function handleFolderInput(event: Event) {
@@ -99,7 +130,6 @@ async function handleFolderInput(event: Event) {
     store.addEntries(tree, files)
   }
 
-  // Reset input so the same folder can be re-added
   input.value = ''
 }
 </script>
