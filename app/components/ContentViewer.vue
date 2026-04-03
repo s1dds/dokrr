@@ -141,10 +141,11 @@ watch(() => store.activeFileId, (_newId, oldId) => {
   }
 })
 
-// Also restore on transition enter (handles normal navigation between files)
+// Called on transition @enter — DOM is present, content visible
 function restoreScroll() {
   if (!mainEl.value || !store.activeFileId) return
   mainEl.value.scrollTop = store.getScrollPosition(store.activeFileId)
+  renderMermaidBlocks()
 }
 
 // Interpolate between MIN_SCALE and MAX_SCALE
@@ -176,7 +177,7 @@ const renderedContent = computed(() => {
 
 // Render mermaid diagrams after content is inserted into the DOM
 let mermaidCounter = 0
-watch(renderedContent, async () => {
+async function renderMermaidBlocks() {
   await nextTick()
   if (!mainEl.value) return
   const preSources = mainEl.value.querySelectorAll('pre.mermaid-source')
@@ -194,6 +195,24 @@ watch(renderedContent, async () => {
       inner.className = 'mermaid-inner'
       inner.innerHTML = svg
       wrapper.appendChild(inner)
+
+      // Size container to fit the SVG, respecting available width
+      const svgEl = inner.querySelector('svg')
+      if (svgEl) {
+        const svgWidth = parseFloat(svgEl.getAttribute('width') || '0')
+        const svgHeight = parseFloat(svgEl.getAttribute('height') || '0')
+        if (svgWidth && svgHeight) {
+          // Remove fixed dimensions from SVG so it scales with the container
+          svgEl.removeAttribute('width')
+          svgEl.setAttribute('width', '100%')
+          svgEl.setAttribute('height', '100%')
+          // Set container height based on aspect ratio, capped to available width
+          const maxWidth = wrapper.parentElement?.clientWidth || 700
+          const fitWidth = Math.min(svgWidth, maxWidth)
+          const fitHeight = (fitWidth / svgWidth) * svgHeight
+          wrapper.style.height = `${fitHeight + 32}px` // +32 for padding
+        }
+      }
 
       // Pan & zoom state
       let scale = 1
@@ -250,7 +269,8 @@ watch(renderedContent, async () => {
       // Leave as code block if mermaid parsing fails
     }
   }
-})
+}
+
 
 </script>
 
@@ -333,20 +353,24 @@ watch(renderedContent, async () => {
   border: 1px solid #1c1c20;
   overflow: hidden;
   cursor: grab;
-  min-height: 200px;
+  min-height: 100px;
+  resize: both;
 }
 
 .mermaid-inner {
   display: flex;
   justify-content: center;
+  align-items: center;
   padding: 1em;
+  width: 100%;
+  height: 100%;
   transform-origin: center center;
   transition: none;
   user-select: none;
 }
 
 .mermaid-inner svg {
-  max-width: 100%;
-  height: auto;
+  width: 100%;
+  height: 100%;
 }
 </style>
