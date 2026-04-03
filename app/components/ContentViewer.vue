@@ -85,6 +85,7 @@
 </template>
 
 <script setup lang="ts">
+import mermaid from 'mermaid'
 import { useBookStore } from '~/stores/book'
 import { useMarkdownRenderer } from '~/composables/useMarkdownRenderer'
 
@@ -106,6 +107,19 @@ const presets = [
 
 onMounted(() => {
   init()
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1c1c20',
+      primaryTextColor: '#c8c8d4',
+      primaryBorderColor: '#5F7D7B',
+      lineColor: '#5F7D7B',
+      secondaryColor: '#111113',
+      tertiaryColor: '#1c1c20',
+      fontFamily: 'Sora, sans-serif',
+    },
+  })
 })
 
 // Save scroll position on scroll (debounced) — keeps IndexedDB up-to-date continuously
@@ -158,6 +172,84 @@ function isPresetActive(value: number): boolean {
 const renderedContent = computed(() => {
   if (!isReady.value || !store.activeContent) return ''
   return render(store.activeContent)
+})
+
+// Render mermaid diagrams after content is inserted into the DOM
+let mermaidCounter = 0
+watch(renderedContent, async () => {
+  await nextTick()
+  if (!mainEl.value) return
+  const preSources = mainEl.value.querySelectorAll('pre.mermaid-source')
+  for (const pre of preSources) {
+    if (pre.dataset.mermaidRendered) continue
+    pre.dataset.mermaidRendered = 'true'
+    const block = pre.querySelector('code')
+    const id = `mermaid-${++mermaidCounter}`
+    try {
+      const { svg } = await mermaid.render(id, block?.textContent || '')
+      const wrapper = document.createElement('div')
+      wrapper.className = 'mermaid-diagram'
+
+      const inner = document.createElement('div')
+      inner.className = 'mermaid-inner'
+      inner.innerHTML = svg
+      wrapper.appendChild(inner)
+
+      // Pan & zoom state
+      let scale = 1
+      let panX = 0
+      let panY = 0
+      let dragging = false
+      let startX = 0
+      let startY = 0
+
+      function applyTransform() {
+        inner.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`
+      }
+
+      // Wheel zoom
+      wrapper.addEventListener('wheel', (e) => {
+        e.preventDefault()
+        const delta = e.deltaY > 0 ? -0.1 : 0.1
+        scale = Math.min(5, Math.max(0.3, scale + delta))
+        applyTransform()
+      }, { passive: false })
+
+      // Drag to pan
+      wrapper.addEventListener('mousedown', (e) => {
+        dragging = true
+        startX = e.clientX - panX
+        startY = e.clientY - panY
+        wrapper.style.cursor = 'grabbing'
+      })
+
+      window.addEventListener('mousemove', (e) => {
+        if (!dragging) return
+        panX = e.clientX - startX
+        panY = e.clientY - startY
+        applyTransform()
+      })
+
+      window.addEventListener('mouseup', () => {
+        if (!dragging) return
+        dragging = false
+        wrapper.style.cursor = 'grab'
+      })
+
+      // Double-click to reset
+      wrapper.addEventListener('dblclick', () => {
+        scale = 1
+        panX = 0
+        panY = 0
+        applyTransform()
+      })
+
+      pre.replaceWith(wrapper)
+    }
+    catch {
+      // Leave as code block if mermaid parsing fails
+    }
+  }
 })
 
 </script>
@@ -228,5 +320,33 @@ const renderedContent = computed(() => {
   height: 3px;
   background: #27272c;
   border-radius: 999px;
+}
+</style>
+
+<style>
+/* Mermaid diagram styling (unscoped so it applies to dynamically inserted elements) */
+.mermaid-diagram {
+  position: relative;
+  margin: 1.5em 0;
+  background: #111113;
+  border-radius: 8px;
+  border: 1px solid #1c1c20;
+  overflow: hidden;
+  cursor: grab;
+  min-height: 200px;
+}
+
+.mermaid-inner {
+  display: flex;
+  justify-content: center;
+  padding: 1em;
+  transform-origin: center center;
+  transition: none;
+  user-select: none;
+}
+
+.mermaid-inner svg {
+  max-width: 100%;
+  height: auto;
 }
 </style>

@@ -9,6 +9,9 @@
       <p class="font-display text-sm text-ink-500 font-300 tracking-wide">
         A distraction-free reader for markdown documents
       </p>
+      <p class="font-display text-xs text-ink-600 font-300 tracking-wide mt-2">
+        100% local &mdash; your files never leave your device
+      </p>
     </div>
 
     <!-- Drop zone -->

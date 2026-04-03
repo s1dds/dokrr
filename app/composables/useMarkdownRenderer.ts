@@ -22,6 +22,10 @@ export function useMarkdownRenderer() {
       linkify: true,
       typographer: true,
       highlight(code, lang) {
+        // Mermaid blocks: output a placeholder that ContentViewer will render
+        if (lang === 'mermaid') {
+          return `<pre class="mermaid-source"><code class="language-mermaid">${instance.utils.escapeHtml(code)}</code></pre>`
+        }
         try {
           const resolvedLang = lang || 'text'
           const loadedLangs = highlighter.getLoadedLanguages()
